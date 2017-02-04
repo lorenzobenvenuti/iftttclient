@@ -1,64 +1,60 @@
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/lorenzobenvenuti/ifttt"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-type valueFlags []string
+var (
+	app = kingpin.New("iftttclient", "A command-line IFTTT client application")
 
-func (i *valueFlags) String() string {
-	return strings.Join(*i, ",")
-}
+	triggerCmd    = app.Command("trigger", "Triggers an event")
+	triggerApiKey = triggerCmd.Flag("api-key", "IFTTT API key").Short('k').String()
+	triggerEvent  = triggerCmd.Arg("event", "Event to trigger").Required().String()
+	triggerValues = triggerCmd.Arg("values", "Values to pass").Strings()
 
-func (i *valueFlags) Set(value string) error {
-	*i = append(*i, value)
-	return nil
-}
+	storeCmd    = app.Command("store", "Stores the IFTTT API key for later use")
+	storeApiKey = storeCmd.Arg("api-key", "IFTTT API key").Required().String()
+)
 
 func exit(err interface{}) {
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)
 }
 
-var apiKey string
-var event string
-var iftttValues valueFlags
+func getApiKeyFromStore() (string, error) {
+	return NewStore("").Retrieve()
+}
 
-func checkApiKey() {
-	if apiKey == "" {
-		apiKey = os.Getenv("IFTTT_API_KEY")
-		if apiKey == "" {
-			exit("Please specify an API key or set the IFTTT_API_KEY variable")
+func getApiKey() (string, error) {
+	key := *triggerApiKey
+	if key == "" {
+		key = os.Getenv("IFTTT_API_KEY")
+		if key == "" {
+			key, _ = getApiKeyFromStore()
 		}
 	}
-}
-
-func checkEvent() {
-	if event == "" {
-		exit("Please specify an event to trigger")
+	if key == "" {
+		return "", errors.New("Please specify an API key")
 	}
-}
-
-func checkArguments() {
-	checkApiKey()
-	checkEvent()
-}
-
-func parseCommandLineArguments() {
-	flag.StringVar(&apiKey, "key", "", "IFTTT API key")
-	flag.StringVar(&event, "event", "", "Event name")
-	flag.Var(&iftttValues, "value", "A value")
-	flag.Parse()
+	return key, nil
 }
 
 func trigger() {
-	iftttClient := ifttt.NewIftttClient(apiKey)
-	iftttClient.Trigger(event, iftttValues)
+	key, err := getApiKey()
+	if err != nil {
+		exit(err)
+	}
+	iftttClient := ifttt.NewIftttClient(key)
+	iftttClient.Trigger(*triggerEvent, *triggerValues)
+}
+
+func store() {
+	NewStore("").Store(*storeApiKey)
 }
 
 func main() {
@@ -67,7 +63,11 @@ func main() {
 			exit(err)
 		}
 	}()
-	parseCommandLineArguments()
-	checkArguments()
-	trigger()
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	case triggerCmd.FullCommand():
+		trigger()
+	case storeCmd.FullCommand():
+		store()
+	}
+
 }
