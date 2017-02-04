@@ -17,14 +17,14 @@ API key can be specified using an environment variable:
 
 ```
 $ export IFTTT_API_KEY=my-api-key
-$ iftttclient trigger [my-value1 my-value2 my-value3]
+$ iftttclient trigger my-event [my-value1 my-value2 my-value3]
 ```
 
 Or you can use the `iftttclient store` command to store it in your home directory:
 
 ```
 $ iftttclient store my-api-key
-$ iftttclient trigger [my-value1 my-value2 my-value3]
+$ iftttclient trigger my-event [my-value1 my-value2 my-value3]
 ```
 
 Please notice that, for now, you API key is written in plain text (in `$HOME/.iftttclient/config.json`)
