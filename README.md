@@ -29,6 +29,10 @@ $ iftttclient trigger my-event [my-value1 my-value2 my-value3]
 
 Please notice that, for now, you API key is written in plain text (in `$HOME/.iftttclient/config.json`)
 
+## Downloads
+
+Binaries [here](https://github.com/lorenzobenvenuti/iftttclient/releases).
+
 ## TODO
 
 * Support encryption for locally stored API key
