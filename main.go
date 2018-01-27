@@ -44,13 +44,13 @@ func getApiKey() (string, error) {
 	return key, nil
 }
 
-func trigger() {
+func trigger() error {
 	key, err := getApiKey()
 	if err != nil {
 		exit(err)
 	}
 	iftttClient := ifttt.NewIftttClient(key)
-	iftttClient.Trigger(*triggerEvent, *triggerValues)
+	return iftttClient.Trigger(*triggerEvent, *triggerValues)
 }
 
 func store() {
@@ -65,7 +65,10 @@ func main() {
 	}()
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case triggerCmd.FullCommand():
-		trigger()
+		err := trigger()
+		if err != nil {
+			panic(err)
+		}
 	case storeCmd.FullCommand():
 		store()
 	}
